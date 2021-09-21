@@ -97,22 +97,24 @@ export default function App() {
     <div className="mainContainer">
       <div className="dataContainer">
         <div className="header">
-          Hey there!
+          Send me a message
         </div>
         <div className="bio">
-          a bio
+          Send me a public message on the blockchain and you will have a chance at winning some ETH!
         </div>
-
-        <button className="waveButton" onClick={wave}>
-          Wave at Me
+        <textarea className="waveInput" placeholder="Your message" />
+        <div className="waveInputCounterWrapper">
+          <p>0</p>
+          <p> / 280</p>
+        </div>
+        <button className="waveButton">
+          Send
         </button>
-
         {currAccount ? null : (
           <button className="waveButton" onClick={connectWallet}>
             Connect Wallet
           </button>
         )}
-
         {allWaves.map((wave, index) => {
           return (
             <div style={{backgroundColor: "OldLace", marginTop: "16px", padding: "8px"}}>
