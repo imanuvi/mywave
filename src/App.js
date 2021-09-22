@@ -93,14 +93,18 @@ export default function App() {
     })
   }
   
+  const displayAddress = (address) => {
+    return `${address.slice(0, 6)}...${address.slice(address.length - 4, address.length)}`
+  }
+
   return (
     <div className="mainContainer">
       <div className="dataContainer">
         <div className="header">
-          Send me a message
+          👋 Wave the block
         </div>
         <div className="bio">
-          Send me a public message on the blockchain and you will have a chance at winning some ETH!
+          Send me a public message on the blockchain and there is a 50% chance to win some ETH!
         </div>
         <textarea className="waveInput" placeholder="Your message" />
         <div className="waveInputCounterWrapper">
@@ -115,7 +119,29 @@ export default function App() {
             Connect Wallet
           </button>
         )}
-        {allWaves.map((wave, index) => {
+        <div className="waveMessageContainer">
+          <div className="waveMessage">
+            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
+            <p>"Smooth UI"</p>
+            <p>22/09/2021, 08:04:19</p>
+          </div>
+          <div className="waveMessage">
+            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
+            <p>"Smooth UI"</p>
+            <p>22/09/2021, 08:04:19</p>
+          </div>
+          <div className="waveMessage">
+            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
+            <p>"Smooth UI"</p>
+            <p>22/09/2021, 08:04:19</p>
+          </div>
+          <div className="waveMessage">
+            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
+            <p>"Smooth UI"</p>
+            <p>22/09/2021, 08:04:19</p>
+          </div>
+        </div>
+        {/* {allWaves.map((wave, index) => {
           return (
             <div style={{backgroundColor: "OldLace", marginTop: "16px", padding: "8px"}}>
               <div>Address: {wave.address}</div>
@@ -123,7 +149,7 @@ export default function App() {
               <div>Message: {wave.message}</div>
             </div>
           )
-        })}
+        })} */}
       </div>
     </div>
   );
