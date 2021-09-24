@@ -2,6 +2,7 @@ import * as React from "react";
 import { ethers } from "ethers";
 import './App.css';
 import abi from './utils/WavePortal.json';
+import { isCompositeComponentWithType } from "react-dom/test-utils";
 
 export default function App() {
   // Just a state variable we use to store our user's public wallet address.
@@ -14,7 +15,8 @@ export default function App() {
   
   const messageLimit = 280
   const [message, setMessage] = React.useState("")
-  const [isButtonDisabled, setisButtonDisabled] = React.useState(true)
+  const [status, setStatus] = React.useState("")
+  const [isButtonDisabled, setIsButtonDisabled] = React.useState(true)
 
   const checkIfWalletIsConnected = () => {
     // First make sure we have access to window.ethereum
@@ -33,10 +35,13 @@ export default function App() {
       if (accounts.length !== 0) {
         // Grab the first account we have access to.
         const account = accounts[0];
-        console.log("Found an authorized account: ", account);
+        // console.log("Found an authorized account: ", account);
 
         // Store the users public wallet address for later!
         setCurrentAccount(account);
+        
+        // Load waves
+        getAllWaves()
       } else {
         console.log("No authorized account found")
       }
@@ -60,7 +65,6 @@ export default function App() {
   // This runs our function when the page loads.
   React.useEffect(() => {
     checkIfWalletIsConnected()
-    console.log(`Current Account: ${currAccount}`)
   }, [])
 
   const wave = async () => {
@@ -68,35 +72,58 @@ export default function App() {
     const signer = provider.getSigner()
     const waveportalContract = new ethers.Contract(contractAddress, contractABI, signer);
 
+    setIsButtonDisabled(true);
+    setMessage("")
+
     let count = await waveportalContract.getTotalWaves()
     setTotalWaves(count.toNumber())
-    console.log("Retrieved total wave count...", count.toNumber())
 
-    const waveTxn = await waveportalContract.wave("This is a message")
+    const waveTxn = await waveportalContract.wave(message, { gasLimit: 300000 })
     console.log("Mining....", waveTxn.hash)
+    setStatus("Mining")
     await waveTxn.wait()
     console.log("Mined --", waveTxn.hash)
 
     count = await waveportalContract.getTotalWaves()
     setTotalWaves(count.toNumber())
-    console.log("Retrieved total wave count...", count.toNumber())
+
+    setStatus("")
   }
 
   const getAllWaves = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner()
-    const waveportalContract = new ethers.Contract(contractAddress, contractABI, signer);
+    try {
+      if (window.ethereum) {
+        console.log('GET ALL WAVES');
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-    let waves = await waveportalContract.getAllWaves()
+        let waves = await wavePortalContract.getAllWaves()
+        let wavesCleaned = []
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000).toLocaleString(),
+            message: wave.message
+          })
+        })
+        wavesCleaned = wavesCleaned.reverse()
+        setAllWaves(wavesCleaned);
 
-    let wavesCleaned = []
-    waves.forEach(wave => {
-      wavesCleaned.push({
-        address: wave.waver,
-        timestamp: new Date(wave.timestamp * 1000),
-        message: wave.message
-      })
-    })
+        // Listen for emitter events!
+        wavePortalContract.on("NewWave", (from, timestamp, message) => {
+          console.log("New Wave", from, timestamp, message);
+
+          setAllWaves(prevState => [...prevState, {
+            address: from,
+            timestamp: new Date(timestamp * 1000).toLocaleString(),
+            message: message
+          }]);
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
   
   const displayAddress = (address) => {
@@ -105,12 +132,10 @@ export default function App() {
 
   const handleInput = React.useCallback((e) => {
     setMessage(e.target.value)
-    console.log(message)
-    // console.log(message, message.length, messageLimit)
-    if (message.length > 0 && message.length <= messageLimit) {
-      setisButtonDisabled(false)
+    if (e.target.value.length > 0 && e.target.value.length <= messageLimit) {
+      setIsButtonDisabled(false)
     } else {
-      setisButtonDisabled(true)
+      setIsButtonDisabled(true)
     }
   }, [])
 
@@ -126,7 +151,7 @@ export default function App() {
         <textarea 
           className="waveInput"
           placeholder="Your message"
-          disabled={currAccount.lengthy > 0 ? false : true}
+          disabled={currAccount.length > 0 ? false : true}
           onChange={handleInput}
           value={message}
         />
@@ -134,52 +159,28 @@ export default function App() {
           <p>{message.length}</p>
           <p>/ {messageLimit}</p>
         </div>
-        {currAccount ? (
-          <button className="waveButton" disabled={isButtonDisabled}>
-            Send
-          </button>) : (
-          <button className="waveButton" onClick={connectWallet}>
-            Connect Wallet
-          </button>
-        )}
+        <div className="row">
+          {currAccount ? (
+            <button className="waveButton" disabled={isButtonDisabled} onClick={wave}>
+              Send
+            </button>) : (
+            <button className="waveButton" onClick={connectWallet}>
+              Connect Wallet
+            </button>
+          )}
+          <p>{status}</p>
+        </div>
         <div className="waveMessageContainer">
           {allWaves.map((wave, index) => {
-            <div className="waveMessage">
-              <p>{displayAddress(wave.address)}</p>
-              <p>{wave.message}</p>
-              <p>{wave.timestamp.toString()}</p>
+            return (
+              <div key={index} className="waveMessage">
+                <p>{displayAddress(wave.address)}</p>
+                <p>{wave.message}</p>
+                <p>{wave.timestamp.toString()}</p>
             </div>
+            )
           })}
-          {/* <div className="waveMessage">
-            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
-            <p>"Smooth UI"</p>
-            <p>22/09/2021, 08:04:19</p>
-          </div>
-          <div className="waveMessage">
-            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
-            <p>"Smooth UI"</p>
-            <p>22/09/2021, 08:04:19</p>
-          </div>
-          <div className="waveMessage">
-            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
-            <p>"Smooth UI"</p>
-            <p>22/09/2021, 08:04:19</p>
-          </div>
-          <div className="waveMessage">
-            <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
-            <p>"Smooth UI"</p>
-            <p>22/09/2021, 08:04:19</p>
-          </div> */}
         </div>
-        {/* {allWaves.map((wave, index) => {
-          return (
-            <div style={{backgroundColor: "OldLace", marginTop: "16px", padding: "8px"}}>
-              <div>Address: {wave.address}</div>
-              <div>Time: {wave.timestamp.toString()}</div>
-              <div>Message: {wave.message}</div>
-            </div>
-          )
-        })} */}
       </div>
     </div>
   );
