@@ -5,11 +5,16 @@ import abi from './utils/WavePortal.json';
 
 export default function App() {
   // Just a state variable we use to store our user's public wallet address.
+  const contractAddress = "0x99C08BD6e294b2424C24a3107aEEAf5Fdc06E723"
+  const contractABI = abi.abi
+ 
   const [currAccount, setCurrentAccount] = React.useState("")
   const [totalWaves, setTotalWaves] = React.useState(0)
   const [allWaves, setAllWaves] = React.useState([])
-  const contractAddress = "0x25297939b5c5A32a3D77278400191ff862612105"
-  const contractABI = abi.abi
+  
+  const messageLimit = 280
+  const [message, setMessage] = React.useState("")
+  const [isButtonDisabled, setisButtonDisabled] = React.useState(true)
 
   const checkIfWalletIsConnected = () => {
     // First make sure we have access to window.ethereum
@@ -55,6 +60,7 @@ export default function App() {
   // This runs our function when the page loads.
   React.useEffect(() => {
     checkIfWalletIsConnected()
+    console.log(`Current Account: ${currAccount}`)
   }, [])
 
   const wave = async () => {
@@ -97,6 +103,17 @@ export default function App() {
     return `${address.slice(0, 6)}...${address.slice(address.length - 4, address.length)}`
   }
 
+  const handleInput = React.useCallback((e) => {
+    setMessage(e.target.value)
+    console.log(message)
+    // console.log(message, message.length, messageLimit)
+    if (message.length > 0 && message.length <= messageLimit) {
+      setisButtonDisabled(false)
+    } else {
+      setisButtonDisabled(true)
+    }
+  }, [])
+
   return (
     <div className="mainContainer">
       <div className="dataContainer">
@@ -106,21 +123,34 @@ export default function App() {
         <div className="bio">
           Send me a public message on the blockchain and there is a 50% chance to win some ETH!
         </div>
-        <textarea className="waveInput" placeholder="Your message" />
+        <textarea 
+          className="waveInput"
+          placeholder="Your message"
+          disabled={currAccount.lengthy > 0 ? false : true}
+          onChange={handleInput}
+          value={message}
+        />
         <div className="waveInputCounterWrapper">
-          <p>0</p>
-          <p> / 280</p>
+          <p>{message.length}</p>
+          <p>/ {messageLimit}</p>
         </div>
-        <button className="waveButton">
-          Send
-        </button>
-        {currAccount ? null : (
+        {currAccount ? (
+          <button className="waveButton" disabled={isButtonDisabled}>
+            Send
+          </button>) : (
           <button className="waveButton" onClick={connectWallet}>
             Connect Wallet
           </button>
         )}
         <div className="waveMessageContainer">
-          <div className="waveMessage">
+          {allWaves.map((wave, index) => {
+            <div className="waveMessage">
+              <p>{displayAddress(wave.address)}</p>
+              <p>{wave.message}</p>
+              <p>{wave.timestamp.toString()}</p>
+            </div>
+          })}
+          {/* <div className="waveMessage">
             <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
             <p>"Smooth UI"</p>
             <p>22/09/2021, 08:04:19</p>
@@ -139,7 +169,7 @@ export default function App() {
             <p>{displayAddress('0xE623b99C1E950c4ecE895050648De5EF802b3773')}</p>
             <p>"Smooth UI"</p>
             <p>22/09/2021, 08:04:19</p>
-          </div>
+          </div> */}
         </div>
         {/* {allWaves.map((wave, index) => {
           return (

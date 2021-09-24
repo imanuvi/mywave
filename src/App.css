@@ -91,6 +91,7 @@ waveButton[disabled] {
   color: rgb(200, 199, 216);
   background-color: rgb(35, 35, 52);
   transform: none !important;
+  cursor: not-allowed !important;
 }
 
 .waveMessageContainer {
